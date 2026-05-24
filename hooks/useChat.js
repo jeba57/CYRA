@@ -1,38 +1,79 @@
+// hooks/useChat.js
 "use client";
 
-import { useState, useCallback } from "react";
-
-const BOT_REPLIES = [
-  "I hear you 💕 That makes complete sense. Your feelings are always valid here.",
-  "During your follicular phase, try adding iron-rich foods like spinach and lentils 🌿",
-  "It's okay to take it slow today ☁️ Rest is not laziness — it's wisdom.",
-  "Cramps on day 1–2 are typically the most intense. A warm compress helps a lot 🍵",
-  "For PCOS support, reducing refined sugar can help regulate blood sugar and hormones 🌿",
-  "Sending you so much gentleness right now 🌷 You're doing better than you think.",
-  "That's completely normal for the luteal phase. Honor how you feel 🌙",
-];
-
-let replyIndex = 0;
+import { useState, useEffect, useCallback } from "react";
+import { useSession } from "next-auth/react";
 
 export function useChat() {
-  const [messages, setMessages] = useState([
-    { id:"0", role:"bot", text:"Hey lovely 🌸 I'm CYRA. I'm here for you. How are you feeling today?" },
-  ]);
-  const [isTyping, setIsTyping] = useState(false);
+  const { data: session } = useSession();
+  const [messages,   setMessages]   = useState([]);
+  const [sessionId,  setSessionId]  = useState(null);
+  const [isTyping,   setIsTyping]   = useState(false);
+  const [loading,    setLoading]    = useState(false);
+  const [error,      setError]      = useState(null);
 
-  const sendMessage = useCallback((text) => {
-    if (!text.trim()) return;
-    setMessages(prev => [...prev, { id: Date.now().toString(), role:"user", text }]);
+  // Load chat history on mount
+  useEffect(() => {
+    if (!session) return;
+    setLoading(true);
+    fetch("/api/chat")
+      .then(r => r.json())
+      .then(data => {
+        if (data.session) {
+          setSessionId(data.session.id);
+          setMessages(
+            data.session.messages.map(m => ({
+              id:   m.id,
+              role: m.role,
+              text: m.content,
+            }))
+          );
+        }
+        // If no messages yet, show the welcome message
+        if (!data.session?.messages?.length) {
+          setMessages([{ id: "0", role: "bot", text: "Hey lovely 🌸 I'm CYRA. I'm here for you. How are you feeling today?" }]);
+        }
+      })
+      .catch(() => {
+        setMessages([{ id: "0", role: "bot", text: "Hey lovely 🌸 I'm CYRA. I'm here for you. How are you feeling today?" }]);
+      })
+      .finally(() => setLoading(false));
+  }, [session]);
+
+  const sendMessage = useCallback(async (text) => {
+    if (!text.trim() || !session) return;
+
+    // Optimistic update
+    const tempId = Date.now().toString();
+    setMessages(prev => [...prev, { id: tempId, role: "user", text }]);
     setIsTyping(true);
-    setTimeout(() => {
-      setMessages(prev => [...prev, {
-        id:   (Date.now()+1).toString(),
-        role: "bot",
-        text: BOT_REPLIES[replyIndex++ % BOT_REPLIES.length],
-      }]);
-      setIsTyping(false);
-    }, 1100);
-  }, []);
 
-  return { messages, sendMessage, isTyping };
+    try {
+      const res  = await fetch("/api/chat", {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify({ message: text, sessionId }),
+      });
+      const data = await res.json();
+
+      if (!res.ok) throw new Error(data.error);
+
+      setSessionId(data.sessionId);
+      setMessages(prev => [
+        ...prev,
+        { id: data.botMessage.id, role: "bot", text: data.botMessage.content },
+      ]);
+    } catch (err) {
+      setError(err.message);
+      // Show fallback
+      setMessages(prev => [
+        ...prev,
+        { id: "err", role: "bot", text: "I'm having trouble connecting right now 💕 Please try again in a moment." },
+      ]);
+    } finally {
+      setIsTyping(false);
+    }
+  }, [session, sessionId]);
+
+  return { messages, isTyping, loading, error, sendMessage };
 }

@@ -1,6 +1,8 @@
+// app/layout.js
 import { Nunito, Cormorant_Garamond } from "next/font/google";
 import "./globals.css";
 import { SmoothScrollProvider } from "../components/layout/SmoothScrollProvider";
+import { AuthSessionProvider } from "../components/layout/SessionProvider";
 
 const nunito = Nunito({
   subsets: ["latin"],
@@ -26,7 +28,12 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en" className={`${nunito.variable} ${cormorant.variable}`}>
       <body style={{ fontFamily: "var(--font-nunito), sans-serif" }}>
-        <SmoothScrollProvider>{children}</SmoothScrollProvider>
+        {/* AuthSessionProvider makes useSession() work everywhere */}
+        <AuthSessionProvider>
+          <SmoothScrollProvider>
+            {children}
+          </SmoothScrollProvider>
+        </AuthSessionProvider>
       </body>
     </html>
   );

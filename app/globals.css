@@ -51,4 +51,26 @@
     -webkit-text-fill-color: transparent;
     background-clip: text;
   }
+  /* Add this to your globals.css */
+
+html {
+  scroll-behavior: smooth;
+}
+
+/* Prevent any layout shift or jank during scroll */
+* {
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Ensure cursor stays crisp during scroll */
+body {
+  cursor: default;
+  will-change: auto;
+}
+
+/* Remove any transform on scrollable containers that cause cursor offset */
+main, section {
+  transform: none !important;
+  will-change: auto !important;
+}
 }

@@ -1,29 +1,71 @@
+// hooks/useCycleData.js
 "use client";
 
-import { useState } from "react";
-import { getCyclePhase } from "@/lib/utils";
+import { useState, useEffect, useCallback } from "react";
+import { useSession } from "next-auth/react";
 
 export function useCycleData() {
-  const [lastPeriodStart] = useState(new Date("2025-05-01"));
-  const [cycleLength]     = useState(28);
-  const [periodLength]    = useState(5);
+  const { data: session } = useSession();
+  const [cycles,  setCycles]  = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error,   setError]   = useState(null);
 
-  const dayOfCycle = Math.floor((Date.now() - lastPeriodStart.getTime()) / (1000 * 60 * 60 * 24)) + 1;
-  const currentPhase = getCyclePhase(dayOfCycle, cycleLength);
+  // Fetch all cycles from API
+  const fetchCycles = useCallback(async () => {
+    if (!session) return;
+    setLoading(true);
+    try {
+      const res  = await fetch("/api/cycle");
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      setCycles(data.cycles);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  }, [session]);
 
-  const nextPeriod = new Date(lastPeriodStart);
-  nextPeriod.setDate(nextPeriod.getDate() + cycleLength);
+  useEffect(() => { fetchCycles(); }, [fetchCycles]);
 
-  const ovulationDay = new Date(lastPeriodStart);
-  ovulationDay.setDate(ovulationDay.getDate() + 14);
+  // Save / update a cycle
+  const saveCycle = useCallback(async (cycleData) => {
+    try {
+      const res  = await fetch("/api/cycle", {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify(cycleData),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      await fetchCycles(); // refresh list
+      return data.cycle;
+    } catch (err) {
+      setError(err.message);
+      throw err;
+    }
+  }, [fetchCycles]);
+
+  // Delete a cycle
+  const deleteCycle = useCallback(async (id) => {
+    try {
+      const res = await fetch(`/api/cycle/${id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error("Failed to delete");
+      setCycles(prev => prev.filter(c => c.id !== id));
+    } catch (err) {
+      setError(err.message);
+    }
+  }, []);
+
+  // Computed values from latest cycle
+  const latest          = cycles[0] || null;
+  const cycleLength     = cycles.find(c => c.cycleLength)?.cycleLength || 28;
+  const ovulationDay    = latest ? new Date(new Date(latest.periodStart).getTime() + (cycleLength - 14) * 86400000) : null;
+  const nextPeriod      = latest ? new Date(new Date(latest.periodStart).getTime() + cycleLength * 86400000) : null;
 
   return {
-    lastPeriodStart,
-    cycleLength,
-    periodLength,
-    dayOfCycle,
-    currentPhase,
-    nextPeriod,
-    ovulationDay,
+    cycles, loading, error,
+    saveCycle, deleteCycle, fetchCycles,
+    latest, cycleLength, ovulationDay, nextPeriod,
   };
 }

@@ -1,0 +1,120 @@
+// prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ─── USER ─────────────────────────────────────────────────────
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String?
+  image         String?
+  password      String?   // hashed, null if using OAuth
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relations
+  cycles        CycleLog[]
+  moodLogs      MoodLog[]
+  diaryFiles    DiaryFile[]
+  chatSessions  ChatSession[]
+  profile       UserProfile?
+
+  @@map("users")
+}
+
+// ─── USER PROFILE ─────────────────────────────────────────────
+model UserProfile {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  avgCycleLength  Int      @default(28)
+  avgPeriodLength Int      @default(5)
+  hasPCOS         Boolean  @default(false)
+  birthYear       Int?
+  timezone        String   @default("Asia/Kolkata")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@map("user_profiles")
+}
+
+// ─── CYCLE LOG ────────────────────────────────────────────────
+model CycleLog {
+  id            String   @id @default(cuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  periodStart   DateTime
+  periodEnd     DateTime?
+  cycleLength   Int?
+  periodLength  Int?
+  flowLevel     String?  // light / medium / heavy
+  notes         String?
+  symptoms      String[] // cramping, bloating, headache, etc.
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@map("cycle_logs")
+}
+
+// ─── MOOD LOG ─────────────────────────────────────────────────
+model MoodLog {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date      DateTime @default(now())
+  mood      Int      // 1-5
+  energy    Int      // 1-10
+  pain      Int      // 1-10
+  notes     String?
+  tags      String[] // tired, anxious, bloated, happy, etc.
+  createdAt DateTime @default(now())
+
+  @@map("mood_logs")
+}
+
+// ─── DIARY FILE ───────────────────────────────────────────────
+model DiaryFile {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name        String
+  category    String   // prescription / blood_report / ultrasound / doctor_notes / lab_test / medicine_photo
+  fileUrl     String   // Supabase Storage URL
+  fileSize    Int?     // bytes
+  mimeType    String?
+  notes       String?
+  uploadedAt  DateTime @default(now())
+
+  @@map("diary_files")
+}
+
+// ─── CHAT SESSION ─────────────────────────────────────────────
+model ChatSession {
+  id        String        @id @default(cuid())
+  userId    String
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime      @default(now())
+  messages  ChatMessage[]
+
+  @@map("chat_sessions")
+}
+
+// ─── CHAT MESSAGE ─────────────────────────────────────────────
+model ChatMessage {
+  id        String      @id @default(cuid())
+  sessionId String
+  session   ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  role      String      // user / bot
+  content   String
+  createdAt DateTime    @default(now())
+
+  @@map("chat_messages")
+}

@@ -15,10 +15,10 @@ export default function MyCyclePage() {
       <main>
       
         <CycleCalendar />
-        <CyclePhaseGuide />
+        
     
       </main>
-      <Footer />
+      
     </>
   );
 }
