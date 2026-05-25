@@ -9,7 +9,7 @@ export default function FeelingsHero() {
       <div style={{ position:"relative", zIndex:1, maxWidth:"650px" }}>
         <motion.div initial={{ opacity:0, y:20 }} animate={{ opacity:1, y:0 }} transition={{ duration:0.6 }}
           style={{ display:"inline-flex", alignItems:"center", gap:"0.5rem", background:"rgba(255,255,255,0.38)", backdropFilter:"blur(12px)", border:"1px solid rgba(255,255,255,0.55)", borderRadius:"50px", padding:"0.4rem 1.1rem", fontSize:"0.78rem", fontWeight:700, color:"#C8909A", letterSpacing:"0.06em", marginBottom:"1.5rem" }}>
-          🌸 Today's Feelings
+          Today's Feelings
         </motion.div>
         <motion.h1 initial={{ opacity:0, y:24 }} animate={{ opacity:1, y:0 }} transition={{ duration:0.7, delay:0.1 }}
           style={{ fontFamily:"var(--font-cormorant),serif", fontSize:"clamp(2.5rem,4.5vw,3.8rem)", fontWeight:300, lineHeight:1.15, color:"#3D2840", marginBottom:"1rem" }}>
