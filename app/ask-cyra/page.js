@@ -17,7 +17,7 @@ export default function AskCyraPage() {
         <ChatInterface />
         <AskFeatures />
       </main>
-      <Footer />
+      
     </>
   );
 }

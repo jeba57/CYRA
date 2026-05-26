@@ -19,7 +19,7 @@ export default function ForYouPage() {
         <MoodTrends />
         <MonthlySummary />
       </main>
-      <Footer />
+      
     </>
   );
 }

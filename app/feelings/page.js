@@ -19,7 +19,7 @@ export default function FeelingsPage() {
         <BloomTracker />
         <FeelingsHistory />
       </main>
-      <Footer />
+      
     </>
   );
 }

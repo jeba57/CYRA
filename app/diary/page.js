@@ -17,7 +17,7 @@ export default function DiaryPage() {
         <DiaryUpload />
         <DiaryGrid />
       </main>
-      <Footer />
+      
     </>
   );
 }

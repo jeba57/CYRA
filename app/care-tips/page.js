@@ -17,7 +17,7 @@ export default function CareTipsPage() {
         <TipsPhaseFilter />
         <TipsGrid />
       </main>
-      <Footer />
+      
     </>
   );
 }
