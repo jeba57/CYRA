@@ -3,6 +3,8 @@
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
+
+
 const QUICK_PROMPTS = [
   "Why am I so tired? 😔",
   "Help with cramps 🩸",
@@ -47,7 +49,14 @@ function getCycleContext() {
   } catch(e) { return null; }
 }
 
-export default function ChatInterface() {
+ export default function ChatInterface() {
+
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const [messages, setMessages] = useState([
     { id:"0", role:"assistant", content:"Hey lovely 🌸 I'm CYRA. I'm here for you. How are you feeling today?" }
   ]);
@@ -117,7 +126,9 @@ export default function ChatInterface() {
             <div>
               <h4 style={{ color:"#fff", fontSize:"0.95rem", fontWeight:700, margin:0 }}>CYRA AI</h4>
               <p style={{ color:"rgba(255,255,255,0.72)", fontSize:"0.73rem", margin:0 }}>
-                {getCycleContext() ? "Personalised to your cycle ✨" : "Your wellness companion"}
+                {mounted && getCycleContext()
+  ? "Personalised to your cycle ✨"
+  : "Your wellness companion"}
               </p>
             </div>
             <div style={{ marginLeft:"auto", display:"flex", alignItems:"center", gap:"0.5rem" }}>
